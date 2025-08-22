@@ -1,33 +1,142 @@
-{% extends "base.html" %}{% block content %}
-<h1 class="text-2xl font-bold mb-4">Tax Report (Summary)</h1>
+{% extends "base.html" %}
+{% block content %}
+<h1 class="text-2xl font-bold mb-4">Tax Report (Itemized)</h1>
 
-<form method="get" action="/reports/ui" class="p-4 bg-slate-900 rounded-2xl grid md:grid-cols-5 gap-3 mb-6">
-  {% if user.is_admin %}
-    <select name="driver_id" class="px-3 py-2">
-      <option value="">(choose driver)</option>
-      {% for d in drivers %}<option value="{{ d.id }}" {% if driver_id and driver_id==d.id %}selected{% endif %}>{{ d.name }}</option>{% endfor %}
+<form method="get" action="/reports/ui" class="p-4 grid md:grid-cols-6 gap-3 mb-6" style="background:#0b1220;border-radius:16px">
+  {# ---- DRIVER PICKER (per-driver reporting) ---- #}
+  {% if user and user.is_admin %}
+    <select name="driver_id" class="px-3 py-2" style="background:#111827;border-radius:10px" required>
+      {% for d in drivers %}
+        <option value="{{ d.id }}" {% if request.query_params.get('driver_id') and request.query_params.get('driver_id')|int == d.id %}selected{% endif %}>
+          #{{ d.id }} — {{ d.name }}
+        </option>
+      {% endfor %}
     </select>
+  {% else %}
+    {# Non-admin: lock to their driver (if present) #}
+    {% if drivers and drivers|length > 0 %}
+      <div class="px-3 py-2 opacity-70">Driver: {{ drivers[0].name }}</div>
+      <input type="hidden" name="driver_id" value="{{ drivers[0].id }}">
+    {% else %}
+      <div class="px-3 py-2 opacity-70">No driver found. Create one in Drivers.</div>
+    {% endif %}
   {% endif %}
-  <input type="date" name="start" value="{{ start }}" class="px-3 py-2">
-  <input type="date" name="end" value="{{ end }}" class="px-3 py-2">
+
+  <input type="date" name="start" value="{{ start }}" class="px-3 py-2" style="background:#111827;border-radius:10px">
+  <input type="date" name="end" value="{{ end }}" class="px-3 py-2" style="background:#111827;border-radius:10px">
+
   <button class="btn">Run</button>
-  <button type="button" class="btn" style="background:#374151" onclick="window.print()">Print</button>
+  <button type="button" class="btn" onclick="window.print()" style="background:#374151">Print</button>
 </form>
 
-<div class="grid md:grid-cols-4 gap-4 mb-6">
-  <div class="p-4 bg-slate-900 rounded-2xl"><div class="text-sm opacity-70">Gross</div><div class="text-3xl font-semibold">${{ '%.2f'|format(gross) }}</div></div>
-  <div class="p-4 bg-slate-900 rounded-2xl"><div class="text-sm opacity-70">Miles</div><div class="text-3xl font-semibold">{{ '%.1f'|format(miles) }}</div></div>
-  {% set mins = (minutes or 0)|int %}{% set hh = mins // 60 %}{% set mm = mins % 60 %}
-  <div class="p-4 bg-slate-900 rounded-2xl"><div class="text-sm opacity-70">Time</div><div class="text-3xl font-semibold">{{ hh }}:{{ '%02d'|format(mm) }}</div></div>
-  <div class="p-4 bg-slate-900 rounded-2xl">
-    <div class="text-sm opacity-70">Income by Platform</div>
-    <div class="text-xs mt-2">
-      {% for p, amt in platform_income.items() %}
-        <div class="flex justify-between"><span>{{ p }}</span><span>${{ '%.2f'|format(amt) }}</span></div>
-      {% endfor %}
+{% if result %}
+  <div class="grid md:grid-cols-4 gap-4 mb-6">
+    <div class="p-4 bg-slate-900 rounded-2xl">
+      <div class="text-sm opacity-70">Gross income</div>
+      <div class="text-3xl font-semibold">${{ '%.2f'|format(result.gross) }}</div>
+    </div>
+    <div class="p-4 bg-slate-900 rounded-2xl">
+      <div class="text-sm opacity-70">Business miles</div>
+      <div class="text-3xl font-semibold">{{ '%.1f'|format(result.business_miles) }}</div>
+      <div class="text-xs opacity-60 mt-1">
+        Mileage rates:
+        {% for y, rt in mileage_rates.items() %}
+          {{ y }}={{ '%.2f'|format(rt) }}{% if not loop.last %} • {% endif %}
+        {% endfor %}
+      </div>
+    </div>
+    <div class="p-4 bg-slate-900 rounded-2xl">
+      <div class="text-sm opacity-70">Minutes worked</div>
+      {% set mins = (result.minutes or 0)|int %}
+      {% set hh = mins // 60 %}{% set mm = mins % 60 %}
+      <div class="text-3xl font-semibold">{{ hh }}:{{ '%02d'|format(mm) }}</div>
+    </div>
+    <div class="p-4 bg-slate-900 rounded-2xl">
+      <div class="text-sm opacity-70">Fuel paid (period)</div>
+      <div class="text-3xl font-semibold">${{ '%.2f'|format(result.fuel_paid_total or 0) }}</div>
+      {% if result.business_ratio is not none %}
+        <div class="text-xs opacity-60 mt-1">Allocated to business (by odometer): ${{ '%.2f'|format(result.fuel_paid_allocated or 0) }}</div>
+      {% endif %}
     </div>
   </div>
-</div>
 
-<p class="opacity-70">Note: Trips that occur on dates with a Daily Log are excluded to avoid double counting.</p>
+  <div class="grid md:grid-cols-2 gap-6 mb-8">
+    <div class="p-4 bg-slate-900 rounded-2xl">
+      <h2 class="text-xl font-semibold mb-3">Income by Platform</h2>
+      <table class="w-full text-left border-collapse">
+        <thead class="text-slate-300"><tr><th class="py-2">Platform</th><th class="text-right">Amount</th></tr></thead>
+        <tbody>
+        {% for p, amt in result.platform_income.items() %}
+          <tr style="border-top:1px solid #1f2937"><td class="py-2">{{ p }}</td><td class="text-right">${{ '%.2f'|format(amt) }}</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="p-4 bg-slate-900 rounded-2xl">
+      <h2 class="text-xl font-semibold mb-3">Expenses by Category</h2>
+      <table class="w-full text-left border-collapse">
+        <thead class="text-slate-300"><tr><th class="py-2">Category</th><th class="text-right">Amount</th></tr></thead>
+        <tbody>
+        {% for c, amt in result.expenses_by_cat.items() %}
+          <tr style="border-top:1px solid #1f2937"><td class="py-2">{{ c }}</td><td class="text-right">${{ '%.2f'|format(amt) }}</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+      <div class="text-xs opacity-60 mt-2">
+        Non-vehicle expenses total: ${{ '%.2f'|format(result.non_vehicle_exp_total or 0) }}<br>
+        Vehicle op (excl. FuelLog): ${{ '%.2f'|format(result.vehicle_op_total or 0) }}
+      </div>
+    </div>
+  </div>
+
+  <div class="grid md:grid-cols-2 gap-6 mb-8">
+    <div class="p-4 bg-slate-900 rounded-2xl">
+      <h2 class="text-xl font-semibold mb-3">Standard Mileage Method</h2>
+      <div>Standard mileage deduction: <b>${{ '%.2f'|format(result.std_mileage_deduction) }}</b></div>
+      <div>+ Non-vehicle expenses: <b>${{ '%.2f'|format(result.non_vehicle_exp_total) }}</b></div>
+      <div class="mt-2">Total deductions: <b>${{ '%.2f'|format(result.total_deduct_standard) }}</b></div>
+      <div class="mt-2">Net profit (Sched C): <b>${{ '%.2f'|format(result.net_standard) }}</b></div>
+      <div class="mt-2">Est. SE tax (15.3% × 92.35%): <b>${{ '%.2f'|format(result.se_tax_standard) }}</b></div>
+    </div>
+
+    <div class="p-4 bg-slate-900 rounded-2xl">
+      <h2 class="text-xl font-semibold mb-3">Actual Expense Method</h2>
+      <div>Allocated fuel + vehicle op: <b>${{ '%.2f'|format(result.actual_vehicle_expenses) }}</b></div>
+      <div>+ Non-vehicle expenses: <b>${{ '%.2f'|format(result.non_vehicle_exp_total) }}</b></div>
+      <div class="mt-2">Total deductions: <b>${{ '%.2f'|format(result.total_deduct_actual) }}</b></div>
+      <div class="mt-2">Net profit (Sched C): <b>${{ '%.2f'|format(result.net_actual) }}</b></div>
+      <div class="mt-2">Est. SE tax (15.3% × 92.35%): <b>${{ '%.2f'|format(result.se_tax_actual) }}</b></div>
+    </div>
+  </div>
+
+  <div class="p-4 bg-slate-900 rounded-2xl">
+    <h2 class="text-xl font-semibold mb-3">Printer-Friendly Summary</h2>
+    <pre style="white-space:pre-wrap;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace">
+Period: {{ start }} to {{ end }}
+Gross income: ${{ '%.2f'|format(result.gross) }}
+Business miles: {{ '%.1f'|format(result.business_miles) }}
+
+STANDARD MILEAGE:
+  Deduction: ${{ '%.2f'|format(result.std_mileage_deduction) }}
+  + Non-vehicle expenses: ${{ '%.2f'|format(result.non_vehicle_exp_total) }}
+  = Total deductions: ${{ '%.2f'|format(result.total_deduct_standard) }}
+  Net profit: ${{ '%.2f'|format(result.net_standard) }}
+  Est. SE tax: ${{ '%.2f'|format(result.se_tax_standard) }}
+
+ACTUAL EXPENSE:
+  Vehicle op + allocated fuel: ${{ '%.2f'|format(result.actual_vehicle_expenses) }}
+  + Non-vehicle expenses: ${{ '%.2f'|format(result.non_vehicle_exp_total) }}
+  = Total deductions: ${{ '%.2f'|format(result.total_deduct_actual) }}
+  Net profit: ${{ '%.2f'|format(result.net_actual) }}
+  Est. SE tax: ${{ '%.2f'|format(result.se_tax_actual) }}
+    </pre>
+    <div class="text-xs opacity-60 mt-2">
+      Trips on dates with a Daily Log are excluded to avoid double-counting.
+      Rates shown are planning estimates — confirm final numbers at filing.
+    </div>
+  </div>
+{% else %}
+  <div class="opacity-70">Pick a driver and date range, then run the report.</div>
+{% endif %}
 {% endblock %}
