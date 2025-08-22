@@ -9,7 +9,7 @@ from types import SimpleNamespace as NS
 
 import bcrypt
 from fastapi import FastAPI, Depends, Request, Form
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, FileResponse
 from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
 from sqlalchemy.orm import Session
@@ -977,3 +977,7 @@ def reports_ui(
 
 # Alias so you can run: uvicorn main:api --reload
 api = app
+
+@api.get("/favicon.ico", include_in_schema=False)
+def favicon():
+    return FileResponse("favicon.ico")
