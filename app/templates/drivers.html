@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block content %}
+<h1 class="text-2xl font-bold mb-4">Drivers</h1>
+
+{% if user.is_admin %}
+<form method="post" action="/drivers/ui" class="p-4 bg-slate-900 rounded-2xl grid md:grid-cols-4 gap-3 mb-6">
+  <input name="name" placeholder="Driver name" class="px-3 py-2">
+  <input name="car" placeholder="Car (optional)" class="px-3 py-2">
+  <input name="platform" placeholder="Platform (optional)" class="px-3 py-2">
+  <button class="btn">Add Driver</button>
+</form>
+{% endif %}
+
+{% if edit_driver %}
+<h2 class="text-xl font-semibold mb-2">Edit: {{ edit_driver.name }}</h2>
+<form method="post" action="/drivers/edit/{{ edit_driver.id }}" class="p-4 bg-slate-900 rounded-2xl grid md:grid-cols-4 gap-3 mb-6">
+  <input name="name" value="{{ edit_driver.name }}" class="px-3 py-2">
+  <input name="car" value="{{ edit_driver.car or '' }}" class="px-3 py-2">
+  <input name="platform" value="{{ edit_driver.platform or '' }}" class="px-3 py-2">
+  <button class="btn">Save</button>
+</form>
+{% endif %}
+
+<table class="w-full text-left border-collapse">
+  <thead class="text-slate-300"><tr><th class="py-2">Name</th><th>Car</th><th>Platform</th><th>Actions</th></tr></thead>
+  <tbody>
+    {% for d in drivers %}
+      <tr style="border-top:1px solid #1f2937">
+        <td class="py-2">{{ d.name }}</td>
+        <td>{{ d.car or '' }}</td>
+        <td>{{ d.platform or '' }}</td>
+        <td><a class="btn" style="padding:4px 8px" href="/drivers/edit/{{ d.id }}">Edit</a></td>
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

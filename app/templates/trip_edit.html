@@ -1,0 +1,16 @@
+{% extends "base.html" %}{% block content %}
+<h1 class="text-2xl font-bold mb-4">Edit Trip</h1>
+<form method="post" class="p-4 bg-slate-900 rounded-2xl grid md:grid-cols-9 gap-3">
+  <select name="driver_id" class="px-3 py-2">
+    {% for d in drivers %}<option value="{{ d.id }}" {% if d.id==trip.driver_id %}selected{% endif %}>{{ d.name }}</option>{% endfor %}
+  </select>
+  <input type="datetime-local" name="date" value="{{ trip.date.strftime('%Y-%m-%dT%H:%M') }}" class="px-3 py-2">
+  <input name="platform" value="{{ trip.platform or '' }}" class="px-3 py-2">
+  <input name="fare" type="number" step="0.01" value="{{ trip.fare or 0 }}" class="px-3 py-2">
+  <input name="tip" type="number" step="0.01" value="{{ trip.tip or 0 }}" class="px-3 py-2">
+  <input name="bonus" type="number" step="0.01" value="{{ trip.bonus or 0 }}" class="px-3 py-2">
+  <input name="miles" type="number" step="0.1" value="{{ trip.miles or 0 }}" class="px-3 py-2">
+  <input name="duration_minutes" type="number" step="1" value="{{ trip.duration_minutes or '' }}" class="px-3 py-2">
+  <button class="btn">Save</button>
+</form>
+{% endblock %}

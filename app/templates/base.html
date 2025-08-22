@@ -1,0 +1,42 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <title>Rideshare Profit Tracker</title>
+  <style>
+    .btn{background:#2563eb;padding:.5rem 1rem;border-radius:.6rem}
+    .navlink{color:#cbd5e1} .navlink:hover{color:white}
+    input,select,textarea{background:#111827;border-radius:10px}
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100">
+  <header class="bg-slate-900 border-b border-slate-800">
+    <div class="max-w-6xl mx-auto p-4 flex items-center gap-6">
+      <a href="/" class="text-xl font-semibold">Rideshare</a>
+      <nav class="flex gap-4">
+        <a href="/daily/ui" class="navlink">Daily</a>
+        <a href="/trips/ui" class="navlink">Trips</a>
+        <a href="/fuel/ui" class="navlink">Fuel</a>
+        <a href="/expenses/ui" class="navlink">Expenses</a>
+        <a href="/reports/ui" class="navlink">Reports</a>
+        <a href="/drivers/ui" class="navlink">Drivers</a>
+        {% if user and user.is_admin %}<a href="/users/ui" class="navlink">Users</a>{% endif %}
+        {% if not user %}<a href="/setup" class="navlink">Setup</a>{% endif %}
+      </nav>
+      <div class="ml-auto">
+        {% if user %}
+          <span class="opacity-70 mr-3">{{ user.username }}{% if user.is_admin %} (admin){% endif %}</span>
+          <a href="/logout" class="navlink">Logout</a>
+        {% else %}
+          <a href="/login" class="navlink">Login</a>
+        {% endif %}
+      </div>
+    </div>
+  </header>
+  <main class="max-w-6xl mx-auto p-6">
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>

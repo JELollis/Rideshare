@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block content %}
+<h1 class="text-2xl font-bold mb-4">Login</h1>
+<form method="post" action="/login" class="p-4 bg-slate-900 rounded-2xl grid md:grid-cols-2 gap-3 max-w-xl">
+  <input name="username" placeholder="Username" class="px-3 py-2">
+  <input name="password" type="password" placeholder="Password" class="px-3 py-2">
+  <button class="btn">Login</button>
+  {% if error %}<div class="text-red-400">{{ error }}</div>{% endif %}
+</form>
+{% endblock %}

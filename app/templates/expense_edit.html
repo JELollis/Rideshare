@@ -1,0 +1,13 @@
+{% extends "base.html" %}{% block content %}
+<h1 class="text-2xl font-bold mb-4">Edit Expense</h1>
+<form method="post" class="p-4 bg-slate-900 rounded-2xl grid md:grid-cols-6 gap-3">
+  <select name="driver_id" class="px-3 py-2">
+    {% for d in drivers %}<option value="{{ d.id }}" {% if expense.driver_id==d.id %}selected{% endif %}>{{ d.name }}</option>{% endfor %}
+  </select>
+  <input type="datetime-local" name="date" value="{{ expense.date.strftime('%Y-%m-%dT%H:%M') }}" class="px-3 py-2">
+  <input name="category" value="{{ expense.category }}" class="px-3 py-2">
+  <input name="amount" type="number" step="0.01" value="{{ expense.amount or 0 }}" class="px-3 py-2">
+  <input name="notes" value="{{ expense.notes or '' }}" class="px-3 py-2">
+  <button class="btn">Save</button>
+</form>
+{% endblock %}

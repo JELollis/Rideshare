@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block content %}
+<h1 class="text-2xl font-bold mb-4">Initial Setup</h1>
+<form method="post" action="/setup" class="p-4 bg-slate-900 rounded-2xl grid md:grid-cols-3 gap-3 max-w-2xl">
+  <input name="username" placeholder="Admin username" class="px-3 py-2">
+  <input name="password" type="password" placeholder="Admin password" class="px-3 py-2">
+  <input name="driver_name" placeholder="Your driver name" class="px-3 py-2">
+  <button class="btn">Create</button>
+</form>
+{% endblock %}

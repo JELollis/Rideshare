@@ -1,0 +1,48 @@
+{% extends "base.html" %}{% block content %}
+<h1 class="text-2xl font-bold mb-4">Trips</h1>
+<form method="post" action="/trips/ui" class="p-4 bg-slate-900 rounded-2xl grid md:grid-cols-9 gap-3 mb-6">
+  <select name="driver_id" class="px-3 py-2">
+    {% for d in drivers %}<option value="{{ d.id }}">{{ d.name }}</option>{% endfor %}
+  </select>
+  <input type="datetime-local" name="date" required class="px-3 py-2">
+  <input name="platform" placeholder="Platform" class="px-3 py-2">
+  <input name="fare" type="number" step="0.01" placeholder="Fare" required class="px-3 py-2">
+  <input name="tip" type="number" step="0.01" placeholder="Tip" class="px-3 py-2">
+  <input name="bonus" type="number" step="0.01" placeholder="Bonus" class="px-3 py-2">
+  <input name="miles" type="number" step="0.1" placeholder="Miles" required class="px-3 py-2">
+  <input name="duration_minutes" type="number" step="1" placeholder="Minutes" class="px-3 py-2">
+  <button class="btn">Add Trip</button>
+</form>
+
+<table class="w-full text-left border-collapse">
+  <thead class="text-slate-300"><tr>
+    <th class="py-2">Date</th><th>Driver</th>{% if user.is_admin %}<th>Users (linked)</th>{% endif %}
+    <th>Platform</th><th>Miles</th><th>Duration</th><th>Fare</th><th>Tip</th><th>Bonus</th><th>Total</th><th>Actions</th>
+  </tr></thead>
+  <tbody>
+    {% for t in trips %}
+      {% set total = (t.fare or 0) + (t.tip or 0) + (t.bonus or 0) %}
+      {% set mins = (t.duration_minutes or 0)|int %}{% set hh = mins // 60 %}{% set mm = mins % 60 %}
+      <tr style="border-top:1px solid #1f2937">
+        <td class="py-2">{{ t.date }}</td>
+        <td>{{ t.driver.name if t.driver else t.driver_id }}</td>
+        {% if user.is_admin %}
+          <td>
+            {% if t.driver and t.driver.users %}
+              {{ t.driver.users | map(attribute='username') | join(', ') }}
+            {% else %}-{% endif %}
+          </td>
+        {% endif %}
+        <td>{{ t.platform or '' }}</td>
+        <td>{{ '%.1f'|format(t.miles or 0) }}</td>
+        <td>{% if t.duration_minutes %}{{ hh }}:{{ '%02d'|format(mm) }}{% else %}-{% endif %}</td>
+        <td>${{ '%.2f'|format(t.fare or 0) }}</td>
+        <td>${{ '%.2f'|format(t.tip or 0) }}</td>
+        <td>${{ '%.2f'|format(t.bonus or 0) }}</td>
+        <td>${{ '%.2f'|format(total) }}</td>
+        <td><a href="/trips/edit/{{ t.id }}" class="btn" style="padding:4px 8px">Edit</a></td>
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

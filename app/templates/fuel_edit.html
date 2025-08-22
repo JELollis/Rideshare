@@ -1,0 +1,15 @@
+{% extends "base.html" %}{% block content %}
+<h1 class="text-2xl font-bold mb-4">Edit Fuel</h1>
+<form method="post" class="p-4 bg-slate-900 rounded-2xl grid md:grid-cols-8 gap-3">
+  <select name="driver_id" class="px-3 py-2">
+    {% for d in drivers %}<option value="{{ d.id }}" {% if d.id==fuel.driver_id %}selected{% endif %}>{{ d.name }}</option>{% endfor %}
+  </select>
+  <input type="datetime-local" name="date" value="{{ fuel.date.strftime('%Y-%m-%dT%H:%M') }}" class="px-3 py-2">
+  <input name="odometer" type="number" step="0.1" value="{{ fuel.odometer or '' }}" class="px-3 py-2">
+  <input name="gallons" type="number" step="0.001" value="{{ fuel.gallons or '' }}" class="px-3 py-2">
+  <input name="total_paid" type="number" step="0.01" value="{{ fuel.total_paid or '' }}" class="px-3 py-2">
+  <input name="vendor" value="{{ fuel.vendor or '' }}" class="px-3 py-2">
+  <input name="notes" value="{{ fuel.notes or '' }}" class="px-3 py-2">
+  <button class="btn">Save</button>
+</form>
+{% endblock %}

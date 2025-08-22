@@ -1,0 +1,41 @@
+{% extends "base.html" %}{% block content %}
+<h1 class="text-2xl font-bold mb-4">Daily Logs</h1>
+<form method="post" action="/daily/ui" class="p-4 bg-slate-900 rounded-2xl grid md:grid-cols-9 gap-3 mb-6">
+  <select name="driver_id" class="px-3 py-2">
+    {% for d in drivers %}<option value="{{ d.id }}">{{ d.name }}</option>{% endfor %}
+  </select>
+  <input type="date" name="date" required class="px-3 py-2">
+  <input name="odo_start" type="number" step="0.1" placeholder="Odo start" class="px-3 py-2">
+  <input name="odo_end" type="number" step="0.1" placeholder="Odo end" class="px-3 py-2">
+  <input name="hours" type="number" min="0" placeholder="Hours" class="px-3 py-2">
+  <input name="mins" type="number" min="0" placeholder="Minutes" class="px-3 py-2">
+  <input name="total_earned" type="number" step="0.01" placeholder="Total earned" class="px-3 py-2">
+  <input name="platform" placeholder="Platform" class="px-3 py-2">
+  <input name="trips_count" type="number" min="0" placeholder="# trips" class="px-3 py-2">
+  <button class="btn">Add Day</button>
+</form>
+
+<table class="w-full text-left border-collapse">
+  <thead class="text-slate-300"><tr>
+    <th class="py-2">Date</th><th>Driver</th><th>Miles</th><th>Duration</th><th>Earned</th><th>$/mile</th><th>Platform</th><th># Trips</th><th>Actions</th>
+  </tr></thead>
+  <tbody>
+    {% for l in logs %}
+      {% set miles = (l.odo_end or 0) - (l.odo_start or 0) %}
+      {% set dpm = (l.total_earned or 0) / miles if miles and miles>0 else None %}
+      {% set mins = (l.minutes_driven or 0)|int %}{% set hh = mins // 60 %}{% set mm = mins % 60 %}
+      <tr style="border-top:1px solid #1f2937">
+        <td class="py-2">{{ l.date }}</td>
+        <td>{{ l.driver.name if l.driver else l.driver_id }}</td>
+        <td>{{ '%.1f'|format(miles) }}</td>
+        <td>{% if l.minutes_driven %}{{ hh }}:{{ '%02d'|format(mm) }}{% else %}-{% endif %}</td>
+        <td>${{ '%.2f'|format(l.total_earned or 0) }}</td>
+        <td>{% if dpm is not none %}${{ '%.2f'|format(dpm) }}{% else %}-{% endif %}</td>
+        <td>{{ l.platform or '' }}</td>
+        <td>{{ l.trips_count or '' }}</td>
+        <td><a href="/daily/edit/{{ l.id }}" class="btn" style="padding:4px 8px">Edit</a></td>
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

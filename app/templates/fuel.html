@@ -1,0 +1,35 @@
+{% extends "base.html" %}{% block content %}
+<h1 class="text-2xl font-bold mb-4">Fuel</h1>
+<form method="post" action="/fuel/ui" class="p-4 bg-slate-900 rounded-2xl grid md:grid-cols-8 gap-3 mb-6">
+  <select name="driver_id" class="px-3 py-2">
+    {% for d in drivers %}<option value="{{ d.id }}">{{ d.name }}</option>{% endfor %}
+  </select>
+  <input type="datetime-local" name="date" required class="px-3 py-2">
+  <input name="odometer" type="number" step="0.1" placeholder="Odometer" class="px-3 py-2">
+  <input name="gallons" type="number" step="0.001" placeholder="Gallons" class="px-3 py-2">
+  <input name="total_paid" type="number" step="0.01" placeholder="Total paid" class="px-3 py-2">
+  <input name="vendor" placeholder="Vendor" class="px-3 py-2">
+  <input name="notes" placeholder="Notes" class="px-3 py-2">
+  <button class="btn">Add Fuel</button>
+</form>
+
+<table class="w-full text-left border-collapse">
+  <thead class="text-slate-300"><tr>
+    <th class="py-2">Date</th><th>Driver</th><th>Odometer</th><th>Gallons</th><th>Paid</th><th>Vendor</th><th>Notes</th><th>Actions</th>
+  </tr></thead>
+  <tbody>
+    {% for fuel in fuels %}
+      <tr style="border-top:1px solid #1f2937">
+        <td class="py-2">{{ fuel.date }}</td>
+        <td>{{ fuel.driver.name if fuel.driver else fuel.driver_id }}</td>
+        <td>{{ fuel.odometer or '' }}</td>
+        <td>{{ fuel.gallons or '' }}</td>
+        <td>${{ '%.2f'|format(fuel.total_paid or 0) }}</td>
+        <td>{{ fuel.vendor or '' }}</td>
+        <td>{{ fuel.notes or '' }}</td>
+        <td><a class="btn" style="padding:4px 8px" href="/fuel/edit/{{ fuel.id }}">Edit</a></td>
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

@@ -1,0 +1,33 @@
+{% extends "base.html" %}{% block content %}
+<h1 class="text-2xl font-bold mb-4">Tax Report (Summary)</h1>
+
+<form method="get" action="/reports/ui" class="p-4 bg-slate-900 rounded-2xl grid md:grid-cols-5 gap-3 mb-6">
+  {% if user.is_admin %}
+    <select name="driver_id" class="px-3 py-2">
+      <option value="">(choose driver)</option>
+      {% for d in drivers %}<option value="{{ d.id }}" {% if driver_id and driver_id==d.id %}selected{% endif %}>{{ d.name }}</option>{% endfor %}
+    </select>
+  {% endif %}
+  <input type="date" name="start" value="{{ start }}" class="px-3 py-2">
+  <input type="date" name="end" value="{{ end }}" class="px-3 py-2">
+  <button class="btn">Run</button>
+  <button type="button" class="btn" style="background:#374151" onclick="window.print()">Print</button>
+</form>
+
+<div class="grid md:grid-cols-4 gap-4 mb-6">
+  <div class="p-4 bg-slate-900 rounded-2xl"><div class="text-sm opacity-70">Gross</div><div class="text-3xl font-semibold">${{ '%.2f'|format(gross) }}</div></div>
+  <div class="p-4 bg-slate-900 rounded-2xl"><div class="text-sm opacity-70">Miles</div><div class="text-3xl font-semibold">{{ '%.1f'|format(miles) }}</div></div>
+  {% set mins = (minutes or 0)|int %}{% set hh = mins // 60 %}{% set mm = mins % 60 %}
+  <div class="p-4 bg-slate-900 rounded-2xl"><div class="text-sm opacity-70">Time</div><div class="text-3xl font-semibold">{{ hh }}:{{ '%02d'|format(mm) }}</div></div>
+  <div class="p-4 bg-slate-900 rounded-2xl">
+    <div class="text-sm opacity-70">Income by Platform</div>
+    <div class="text-xs mt-2">
+      {% for p, amt in platform_income.items() %}
+        <div class="flex justify-between"><span>{{ p }}</span><span>${{ '%.2f'|format(amt) }}</span></div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<p class="opacity-70">Note: Trips that occur on dates with a Daily Log are excluded to avoid double counting.</p>
+{% endblock %}
