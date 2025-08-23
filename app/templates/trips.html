@@ -40,7 +40,12 @@
         <td>${{ '%.2f'|format(t.tip or 0) }}</td>
         <td>${{ '%.2f'|format(t.bonus or 0) }}</td>
         <td>${{ '%.2f'|format(total) }}</td>
-        <td><a href="/trips/edit/{{ t.id }}" class="btn" style="padding:4px 8px">Edit</a></td>
+        <td>
+          <a href="/trips/edit/{{ t.id }}" class="btn" style="padding:4px 8px">Edit</a>
+          <form method="post" action="/trips/delete/{{ t.id }}" style="display:inline" onsubmit="return confirm('Delete this trip?')">
+            <button class="btn" style="background:#dc2626;margin-left:4px">Delete</button>
+          </form>
+        </td>
       </tr>
     {% endfor %}
   </tbody>

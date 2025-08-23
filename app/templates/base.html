@@ -23,6 +23,8 @@
         <a href="/expenses/ui" class="navlink">Expenses</a>
         <a href="/reports/ui" class="navlink">Reports</a>
         <a href="/drivers/ui" class="navlink">Drivers</a>
+        <a class="hover:underline" href="/vehicles/ui">Vehicles</a>
+
         {% if user and user.is_admin %}<a href="/users/ui" class="navlink">Users</a>{% endif %}
         {% if not user %}<a href="/setup" class="navlink">Setup</a>{% endif %}
       </nav>

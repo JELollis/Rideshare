@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block content %}
+<h1 class="text-2xl font-bold mb-4">Vehicles</h1>
+<form method="post" action="/vehicles/ui" class="grid md:grid-cols-6 gap-2 p-4 bg-slate-900 rounded-2xl mb-6">
+  {% if user.is_admin %}
+    <select name="driver_id" class="p-2 rounded bg-slate-800">
+      {% for d in drivers %}<option value="{{ d.id }}">{{ d.name }}</option>{% endfor %}
+    </select>
+  {% endif %}
+  <input name="name" placeholder="Name (e.g., Jeep)" class="p-2 rounded bg-slate-800" required>
+  <input name="make" placeholder="Make" class="p-2 rounded bg-slate-800">
+  <input name="model" placeholder="Model" class="p-2 rounded bg-slate-800">
+  <input name="year" placeholder="Year" class="p-2 rounded bg-slate-800">
+  <input name="plate" placeholder="Plate" class="p-2 rounded bg-slate-800">
+  <label class="flex items-center gap-2 mt-2"><input type="checkbox" name="is_default"> Default</label>
+  <button class="mt-2 p-2 bg-blue-600 rounded">Add Vehicle</button>
+</form>
+
+<table class="w-full text-left">
+  <thead><tr><th>Name</th><th>Driver</th><th>Make/Model</th><th>Year</th><th>Plate</th><th>Default</th><th></th></tr></thead>
+  <tbody>
+  {% for v in vehicles %}
+    <tr class="border-b border-slate-800">
+      <td>{{ v.name }}</td>
+      <td>{{ v.driver.name }}</td>
+      <td>{{ v.make or '' }} {{ v.model or '' }}</td>
+      <td>{{ v.year or '' }}</td>
+      <td>{{ v.plate or '' }}</td>
+      <td>{% if v.is_default %}✅{% endif %}</td>
+      <td class="text-right">
+        <a class="text-blue-400" href="/vehicles/edit/{{ v.id }}">Edit</a>
+        <form method="post" action="/vehicles/delete/{{ v.id }}" style="display:inline">
+          <button class="text-red-400 ml-2">Delete</button>
+        </form>
+      </td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

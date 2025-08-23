@@ -18,14 +18,26 @@
 {% endif %}
 
 <table class="w-full text-left border-collapse">
-  <thead class="text-slate-300"><tr><th class="py-2">Username</th><th>Admin</th><th>Driver</th><th>Actions</th></tr></thead>
+  <thead class="text-slate-300">
+    <tr>
+      <th class="py-2">Username</th>
+      <th>Admin</th>
+      <th>Driver</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
   <tbody>
     {% for u in users %}
       <tr style="border-top:1px solid #1f2937">
         <td class="py-2">{{ u.username }}</td>
         <td>{% if u.is_admin %}✔{% else %}—{% endif %}</td>
         <td>{{ u.driver.name if u.driver else '' }}</td>
-        <td><a class="btn" style="padding:4px 8px" href="/users/edit/{{ u.id }}">Edit</a></td>
+        <td>
+          <a class="btn" style="padding:4px 8px" href="/users/edit/{{ u.id }}">Edit</a>
+          <form method="post" action="/users/delete/{{ u.id }}" style="display:inline" onsubmit="return confirm('Delete this user?')">
+            <button class="btn" style="background:#dc2626;padding:4px 8px">Delete</button>
+          </form>
+        </td>
       </tr>
     {% endfor %}
   </tbody>

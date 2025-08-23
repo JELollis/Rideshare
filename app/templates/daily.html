@@ -1,4 +1,5 @@
-{% extends "base.html" %}{% block content %}
+{% extends "base.html" %}
+{% block content %}
 <h1 class="text-2xl font-bold mb-4">Daily Logs</h1>
 <form method="post" action="/daily/ui" class="p-4 bg-slate-900 rounded-2xl grid md:grid-cols-9 gap-3 mb-6">
   <select name="driver_id" class="px-3 py-2">
@@ -33,7 +34,12 @@
         <td>{% if dpm is not none %}${{ '%.2f'|format(dpm) }}{% else %}-{% endif %}</td>
         <td>{{ l.platform or '' }}</td>
         <td>{{ l.trips_count or '' }}</td>
-        <td><a href="/daily/edit/{{ l.id }}" class="btn" style="padding:4px 8px">Edit</a></td>
+        <td>
+          <a href="/daily/edit/{{ l.id }}" class="btn" style="padding:4px 8px">Edit</a>
+          <form method="post" action="/daily/delete/{{ l.id }}" style="display:inline" onsubmit="return confirm('Delete this log?')">
+            <button class="btn" style="background:#dc2626;margin-left:4px">Delete</button>
+          </form>
+        </td>
       </tr>
     {% endfor %}
   </tbody>

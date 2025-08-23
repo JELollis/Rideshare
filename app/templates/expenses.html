@@ -1,8 +1,12 @@
-{% extends "base.html" %}{% block content %}
+{% extends "base.html" %}
+{% block content %}
 <h1 class="text-2xl font-bold mb-4">Expenses</h1>
+
 <form method="post" action="/expenses/ui" class="p-4 bg-slate-900 rounded-2xl grid md:grid-cols-6 gap-3 mb-6">
   <select name="driver_id" class="px-3 py-2">
-    {% for d in drivers %}<option value="{{ d.id }}">{{ d.name }}</option>{% endfor %}
+    {% for d in drivers %}
+      <option value="{{ d.id }}">{{ d.name }}</option>
+    {% endfor %}
   </select>
   <input type="datetime-local" name="date" required class="px-3 py-2">
   <input name="category" placeholder="Category" class="px-3 py-2">
@@ -10,8 +14,18 @@
   <input name="notes" placeholder="Notes" class="px-3 py-2">
   <button class="btn">Add Expense</button>
 </form>
+
 <table class="w-full text-left border-collapse">
-  <thead class="text-slate-300"><tr><th class="py-2">Date</th><th>Driver</th><th>Category</th><th>Amount</th><th>Notes</th><th>Actions</th></tr></thead>
+  <thead class="text-slate-300">
+    <tr>
+      <th class="py-2">Date</th>
+      <th>Driver</th>
+      <th>Category</th>
+      <th>Amount</th>
+      <th>Notes</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
   <tbody>
     {% for expense in expenses %}
       <tr style="border-top:1px solid #1f2937">
@@ -20,7 +34,12 @@
         <td>{{ expense.category }}</td>
         <td>${{ '%.2f'|format(expense.amount or 0) }}</td>
         <td>{{ expense.notes or '' }}</td>
-        <td><a class="btn" style="padding:4px 8px" href="/expenses/edit/{{ expense.id }}">Edit</a></td>
+        <td>
+          <a class="btn" style="padding:4px 8px" href="/expenses/edit/{{ expense.id }}">Edit</a>
+          <form method="post" action="/expenses/delete/{{ expense.id }}" style="display:inline" onsubmit="return confirm('Delete this expense?');">
+            <button class="btn" style="background:#dc2626;margin-left:4px">Delete</button>
+          </form>
+        </td>
       </tr>
     {% endfor %}
   </tbody>

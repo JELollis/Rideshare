@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block content %}
 <h1 class="text-2xl font-bold mb-4">Dashboard</h1>
-<div class="grid md:grid-cols-4 gap-4">
+<div class="grid md:grid-cols-5 gap-4">
   <div class="p-4 bg-slate-900 rounded-2xl">
     <div class="text-sm opacity-70">Gross</div>
     <div class="text-3xl font-semibold">${{ '%.2f'|format(gross) }}</div>
@@ -9,6 +9,10 @@
   <div class="p-4 bg-slate-900 rounded-2xl">
     <div class="text-sm opacity-70">Expenses</div>
     <div class="text-3xl font-semibold">${{ '%.2f'|format(expenses) }}</div>
+  </div>
+  <div class="p-4 bg-slate-900 rounded-2xl">
+    <div class="text-sm opacity-70">Fuel</div>
+    <div class="text-3xl font-semibold">${{ '%.2f'|format(fuel or 0) }}</div>
   </div>
   <div class="p-4 bg-slate-900 rounded-2xl">
     <div class="text-sm opacity-70">Net</div>
@@ -19,5 +23,16 @@
     <div class="text-3xl font-semibold">{{ '%.1f'|format(miles) }}</div>
   </div>
 </div>
-<p class="mt-6 text-slate-300">Use the nav to add Daily logs, Trips, Fuel, and Expenses.</p>
+
+<div class="grid md:grid-cols-3 gap-4 mt-4">
+  <div class="p-4 bg-slate-900 rounded-2xl">
+    <div class="text-sm opacity-70">Avg MPG</div>
+    <div class="text-3xl font-semibold">
+      {% if avg_mpg is not none %}{{ '%.1f'|format(avg_mpg) }}{% else %}—{% endif %}
+    </div>
+    <div class="text-xs opacity-60 mt-1">Weighted by each vehicle’s fill‑to‑fill segments.</div>
+  </div>
+</div>
+
+<p class="mt-6 text-slate-300">Use the nav to add Vehicles, Daily logs, Trips, Fuel, and Expenses.</p>
 {% endblock %}

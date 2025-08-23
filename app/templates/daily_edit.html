@@ -1,18 +1,41 @@
-{% extends "base.html" %}{% block content %}
+{% extends "base.html" %}
+{% block content %}
 <h1 class="text-2xl font-bold mb-4">Edit Day</h1>
-<form method="post" class="p-4 bg-slate-900 rounded-2xl grid md:grid-cols-9 gap-3">
+
+<form method="post" class="p-4 bg-slate-900 rounded-2xl grid md:grid-cols-9 gap-3 mb-4">
   <select name="driver_id" class="px-3 py-2">
-    {% for d in drivers %}<option value="{{ d.id }}" {% if d.id==log.driver_id %}selected{% endif %}>{{ d.name }}</option>{% endfor %}
+    {% for d in drivers %}
+      <option value="{{ d.id }}" {% if d.id == log.driver_id %}selected{% endif %}>{{ d.name }}</option>
+    {% endfor %}
   </select>
-  <input type="date" name="date" value="{{ log.date }}" class="px-3 py-2">
-  <input name="odo_start" type="number" step="0.1" value="{{ log.odo_start or '' }}" class="px-3 py-2">
-  <input name="odo_end" type="number" step="0.1" value="{{ log.odo_end or '' }}" class="px-3 py-2">
-  {% set mins = (log.minutes_driven or 0)|int %}{% set hh = mins // 60 %}{% set mm = mins % 60 %}
-  <input name="hours" type="number" min="0" value="{{ hh }}" class="px-3 py-2">
-  <input name="mins" type="number" min="0" value="{{ mm }}" class="px-3 py-2">
-  <input name="total_earned" type="number" step="0.01" value="{{ log.total_earned or 0 }}" class="px-3 py-2">
-  <input name="platform" value="{{ log.platform or '' }}" class="px-3 py-2">
-  <input name="trips_count" type="number" min="0" value="{{ log.trips_count or '' }}" class="px-3 py-2">
+
+  <input
+    type="date"
+    name="date"
+    value="{% if log.date %}{{ log.date.strftime('%Y-%m-%d') }}{% endif %}"
+    class="px-3 py-2"
+    required>
+
+  <input name="odo_start" type="number" step="0.1" value="{{ log.odo_start if log.odo_start is not none else '' }}" placeholder="Odo start" class="px-3 py-2">
+  <input name="odo_end" type="number" step="0.1" value="{{ log.odo_end if log.odo_end is not none else '' }}" placeholder="Odo end" class="px-3 py-2">
+
+  {% set mins = (log.minutes_driven or 0)|int %}
+  {% set hh = mins // 60 %}
+  {% set mm = mins % 60 %}
+  <input name="hours" type="number" min="0" value="{{ hh }}" placeholder="Hours" class="px-3 py-2">
+  <input name="mins" type="number" min="0" value="{{ mm }}" placeholder="Minutes" class="px-3 py-2">
+
+  <input name="total_earned" type="number" step="0.01" value="{{ '%.2f'|format(log.total_earned or 0) }}" placeholder="Total earned" class="px-3 py-2">
+  <input name="platform" value="{{ log.platform or '' }}" placeholder="Platform" class="px-3 py-2">
+  <input name="trips_count" type="number" min="0" value="{{ log.trips_count if log.trips_count is not none else '' }}" placeholder="# trips" class="px-3 py-2">
+
   <button class="btn">Save</button>
 </form>
+
+<div class="flex items-center gap-3">
+  <a href="/daily/ui" class="btn" style="background:#374151">Cancel</a>
+  <form method="post" action="/daily/delete/{{ log.id }}" onsubmit="return confirm('Delete this day? This cannot be undone.');" style="display:inline">
+    <button class="btn" style="background:#dc2626">Delete</button>
+  </form>
+</div>
 {% endblock %}

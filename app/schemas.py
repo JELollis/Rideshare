@@ -33,7 +33,7 @@ class TripBase(BaseModel):
     tip: float = 0.0
     bonus: float = 0.0
     miles: float
-    duration_minutes: Optional[float] = None
+    duration_minutes: Optional[int] = None  # integer minutes for consistency
 
 class TripCreate(TripBase):
     pass
@@ -46,7 +46,7 @@ class TripUpdate(BaseModel):
     tip: Optional[float] = None
     bonus: Optional[float] = None
     miles: Optional[float] = None
-    duration_minutes: Optional[float] = None
+    duration_minutes: Optional[int] = None
 
 class Trip(TripBase):
     id: int
@@ -135,7 +135,7 @@ class Fuel(FuelBase):
 # ---------- User ----------
 class UserBase(BaseModel):
     username: str
-    driver_id: Optional[int] = None
+    driver_id: Optional[int] = None  # <-- made optional/nullable
     is_admin: bool = False
 
 class UserCreate(UserBase):

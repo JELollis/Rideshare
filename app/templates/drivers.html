@@ -22,14 +22,23 @@
 {% endif %}
 
 <table class="w-full text-left border-collapse">
-  <thead class="text-slate-300"><tr><th class="py-2">Name</th><th>Car</th><th>Platform</th><th>Actions</th></tr></thead>
+  <thead class="text-slate-300">
+    <tr><th class="py-2">Name</th><th>Car</th><th>Platform</th><th>Actions</th></tr>
+  </thead>
   <tbody>
     {% for d in drivers %}
       <tr style="border-top:1px solid #1f2937">
         <td class="py-2">{{ d.name }}</td>
         <td>{{ d.car or '' }}</td>
         <td>{{ d.platform or '' }}</td>
-        <td><a class="btn" style="padding:4px 8px" href="/drivers/edit/{{ d.id }}">Edit</a></td>
+        <td>
+          <a class="btn" style="padding:4px 8px" href="/drivers/edit/{{ d.id }}">Edit</a>
+          {% if user.is_admin %}
+          <form method="post" action="/drivers/delete/{{ d.id }}" style="display:inline" onsubmit="return confirm('Delete this driver?');">
+            <button class="btn" style="background:#dc2626;margin-left:4px">Delete</button>
+          </form>
+          {% endif %}
+        </td>
       </tr>
     {% endfor %}
   </tbody>
