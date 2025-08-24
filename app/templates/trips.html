@@ -4,6 +4,15 @@
   <select name="driver_id" class="px-3 py-2">
     {% for d in drivers %}<option value="{{ d.id }}">{{ d.name }}</option>{% endfor %}
   </select>
+  <select name="vehicle_id" class="p-2 rounded bg-slate-800">
+    <option value="">(default vehicle)</option>
+    {% for v in vehicles %}
+      <option value="{{ v.id }}">
+        {{ v.driver.name }} — {{ v.name }}{% if v.year or v.make or v.model %} ({{ v.year or '' }} {{ v.make or '' }} {{ v.model or '' }}){% endif %}
+        {% if v.is_default %} ★{% endif %}
+      </option>
+    {% endfor %}
+  </select>
   <input type="datetime-local" name="date" required class="px-3 py-2">
   <input name="platform" placeholder="Platform" class="px-3 py-2">
   <input name="fare" type="number" step="0.01" placeholder="Fare" required class="px-3 py-2">

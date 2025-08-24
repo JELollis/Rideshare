@@ -13,8 +13,18 @@
   </div>
 
   <div>
-    <label class="block text-sm mb-1 opacity-70">Car</label>
-    <input name="car" value="{{ driver.car or '' }}" class="px-3 py-2 w-full">
+    <label class="block text-sm opacity-70 mb-1">Primary Vehicle</label>
+    <select name="car" class="p-2 rounded bg-slate-800 w-full">
+      <option value="">— None —</option>
+      {% for v in vehicles_for_driver %}
+        {% set label = (v.name ~ (' (' ~ (v.year or '') ~ ' ' ~ (v.make or '') ~ ' ' ~ (v.model or '') ~ ')')) %}
+        <option value="{{ label.strip() }}"
+          {% if driver.car and driver.car.strip() == label.strip() %}selected{% endif %}>
+          {{ label }}
+        </option>
+      {% endfor %}
+    </select>
+    <p class="text-xs opacity-60 mt-1">This is just a display label for now. The real linkage happens on Trips/Fuel via vehicle selection.</p>
   </div>
 
   <div>

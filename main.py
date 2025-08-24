@@ -22,7 +22,7 @@ from app import models
 
 Base.metadata.create_all(bind=engine)
 
-app = FastAPI(title="Rideshare Profit Tracker", version="1.1.0")
+app = FastAPI(title="Rideshare Profit Tracker", version="1.2.0")
 
 # Use a single, correct session secret
 _session_secret = getattr(settings, "session_secret", None) or getattr(settings, "secret_key", None) or "change-me"
@@ -248,7 +248,7 @@ def logout(request: Request):
 @app.get("/", response_class=HTMLResponse)
 def dashboard(request: Request, db: Session = Depends(get_db)):
     """
-    Shows top-level totals. Net = Gross - (Expenses + Fuel).
+    Top-level totals. Net = Gross - (Expenses + Fuel).
     Also computes overall average MPG across vehicles (weighted by each segment).
     """
     user = get_current_user(request, db)
@@ -365,7 +365,14 @@ def drivers_edit_page(driver_id: int, request: Request, db: Session = Depends(ge
     if not _user_can_access_driver(user, d.id):
         return RedirectResponse(url="/drivers/ui", status_code=303)
 
-    return templates.TemplateResponse("drivers_edit.html", {"request": request, "driver": d, "user": user})
+    v_list = db.query(models.Vehicle).filter(models.Vehicle.driver_id == d.id).order_by(
+        models.Vehicle.is_default.desc(), models.Vehicle.name.asc()
+    ).all()
+
+    return templates.TemplateResponse(
+        "drivers_edit.html",
+        {"request": request, "driver": d, "vehicles_for_driver": v_list, "user": user},
+    )
 
 
 @app.post("/drivers/edit/{driver_id}")
@@ -533,11 +540,19 @@ def vehicles_ui(request: Request, db: Session = Depends(get_db)):
     q = db.query(models.Vehicle)
     if not user.is_admin and user.driver_id:
         q = q.filter(models.Vehicle.driver_id == user.driver_id)
-    vehicles = q.order_by(models.Vehicle.driver_id.asc(), models.Vehicle.is_default.desc(), models.Vehicle.name.asc()).all()
+    vehicles = q.order_by(
+        models.Vehicle.driver_id.asc(), models.Vehicle.is_default.desc(), models.Vehicle.name.asc()
+    ).all()
+
+    # MPG per vehicle
+    mpg_by_vid: Dict[int, Optional[float]] = {}
+    for v in vehicles:
+        avg_mpg, _ = rolling_mpg_for_vehicle(db, v.id)
+        mpg_by_vid[v.id] = avg_mpg
 
     return templates.TemplateResponse(
         "vehicles.html",
-        {"request": request, "drivers": drivers, "vehicles": vehicles, "user": user},
+        {"request": request, "drivers": drivers, "vehicles": vehicles, "mpg_by_vid": mpg_by_vid, "user": user},
     )
 
 
@@ -807,9 +822,19 @@ def trips_ui(
         q = q.filter(models.Trip.driver_id == driver_id)
     trips = q.order_by(models.Trip.date.desc()).limit(200).all()
 
+    # Vehicles for the dropdown
+    vehicles_q = db.query(models.Vehicle)
+    if not user.is_admin:
+        vehicles_q = vehicles_q.filter(models.Vehicle.driver_id == user.driver_id)
+    elif driver_id:
+        vehicles_q = vehicles_q.filter(models.Vehicle.driver_id == driver_id)
+    vehicles = vehicles_q.order_by(
+        models.Vehicle.driver_id.asc(), models.Vehicle.is_default.desc(), models.Vehicle.name.asc()
+    ).all()
+
     return templates.TemplateResponse(
         "trips.html",
-        {"request": request, "drivers": drivers, "trips": trips, "user": user, "driver_id": driver_id},
+        {"request": request, "drivers": drivers, "trips": trips, "vehicles": vehicles, "user": user, "driver_id": driver_id},
     )
 
 
@@ -818,7 +843,7 @@ def trips_ui_create(
     request: Request,
     db: Session = Depends(get_db),
     driver_id: Optional[str] = Form(None),
-    vehicle_id: Optional[str] = Form(None),   # NEW
+    vehicle_id: Optional[str] = Form(None),
     date: Optional[str] = Form(None),
     date_str: Optional[str] = Form(None),
     platform: str = Form(""),
@@ -966,9 +991,19 @@ def fuel_ui(
         q = q.filter(models.Fuel.driver_id == driver_id)
     fuels = q.order_by(models.Fuel.date.desc()).limit(200).all()
 
+    # Vehicles for the dropdown
+    vehicles_q = db.query(models.Vehicle)
+    if not user.is_admin:
+        vehicles_q = vehicles_q.filter(models.Vehicle.driver_id == user.driver_id)
+    elif driver_id:
+        vehicles_q = vehicles_q.filter(models.Vehicle.driver_id == driver_id)
+    vehicles = vehicles_q.order_by(
+        models.Vehicle.driver_id.asc(), models.Vehicle.is_default.desc(), models.Vehicle.name.asc()
+    ).all()
+
     return templates.TemplateResponse(
         "fuel.html",
-        {"request": request, "drivers": drivers, "fuels": fuels, "user": user, "driver_id": driver_id},
+        {"request": request, "drivers": drivers, "fuels": fuels, "vehicles": vehicles, "user": user, "driver_id": driver_id},
     )
 
 
@@ -977,7 +1012,7 @@ def fuel_ui_create(
     request: Request,
     db: Session = Depends(get_db),
     driver_id: Optional[str] = Form(None),
-    vehicle_id: Optional[str] = Form(None),   # NEW
+    vehicle_id: Optional[str] = Form(None),
     date: Optional[str] = Form(None),
     date_str: Optional[str] = Form(None),
     odometer: float = Form(...),
@@ -1026,6 +1061,80 @@ def fuel_delete(fuel_id: int, request: Request, db: Session = Depends(get_db)):
     if f and _user_can_access_driver(user, f.driver_id):
         db.delete(f)
         db.commit()
+    return RedirectResponse("/fuel/ui", status_code=303)
+
+# ---------------- Fuel (continued) ----------------
+
+@app.get("/fuel/edit/{fuel_id}", response_class=HTMLResponse)
+def fuel_edit_page(fuel_id: int, request: Request, db: Session = Depends(get_db)):
+    user = require_login(request, db)
+    if isinstance(user, RedirectResponse):
+        return user
+
+    f = db.get(models.Fuel, fuel_id)
+    if not f or not _user_can_access_driver(user, f.driver_id):
+        return RedirectResponse("/fuel/ui", status_code=303)
+
+    # drivers for dropdown
+    drivers = _drivers_for_user(user, db)
+
+    # vehicles for dropdown
+    vehicles_q = db.query(models.Vehicle)
+    if not user.is_admin:
+        vehicles_q = vehicles_q.filter(models.Vehicle.driver_id == user.driver_id)
+    vehicles = vehicles_q.order_by(
+        models.Vehicle.driver_id.asc(),
+        models.Vehicle.is_default.desc(),
+        models.Vehicle.name.asc(),
+    ).all()
+
+    return templates.TemplateResponse(
+        "fuel_edit.html",
+        {"request": request, "fuel": f, "drivers": drivers, "vehicles": vehicles, "user": user},
+    )
+
+
+@app.post("/fuel/edit/{fuel_id}")
+def fuel_edit(
+    fuel_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    driver_id: Optional[str] = Form(None),
+    vehicle_id: Optional[str] = Form(None),
+    date: Optional[str] = Form(None),
+    date_str: Optional[str] = Form(None),
+    odometer: float = Form(...),
+    gallons: float = Form(...),
+    total_paid: float = Form(...),
+    vendor: str = Form(""),
+    notes: str = Form(""),
+):
+    user = require_login(request, db)
+    if isinstance(user, RedirectResponse):
+        return user
+
+    f = db.get(models.Fuel, fuel_id)
+    if not f or not _user_can_access_driver(user, f.driver_id):
+        return RedirectResponse("/fuel/ui", status_code=303)
+
+    did = to_int_or_none(driver_id) or f.driver_id
+    if not user.is_admin:
+        did = user.driver_id
+    vid = to_int_or_none(vehicle_id) or f.vehicle_id
+    if not vid:
+        dv = drivers_default_vehicle(db, did)
+        vid = dv.id if dv else None
+
+    f.driver_id = did
+    f.vehicle_id = vid
+    f.date = parse_date_from_form(date_str or date, f.date)
+    f.odometer = odometer
+    f.gallons = gallons
+    f.total_paid = total_paid
+    f.vendor = vendor.strip() or None
+    f.notes = notes.strip() or None
+
+    db.commit()
     return RedirectResponse("/fuel/ui", status_code=303)
 
 
